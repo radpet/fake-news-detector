@@ -18,6 +18,8 @@ Fake news detector
 ### Attention in Keras
 
 * https://github.com/keras-team/keras/issues/4962
+* https://machinelearningmastery.com/encoder-decoder-attention-sequence-to-sequence-prediction-keras/
+* https://github.com/datalogue/keras-attention
 
 
 ### Attention in TF
