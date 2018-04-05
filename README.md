@@ -30,3 +30,4 @@ Fake news detector
 
 * https://www.cs.cmu.edu/~diyiy/docs/naacl16.pdf
 * http://www.aclweb.org/anthology/N16-1012
+* https://guillaumegenthial.github.io/sequence-to-sequence.html
