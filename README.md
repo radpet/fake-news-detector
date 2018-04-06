@@ -33,3 +33,4 @@ Fake news detector
 * https://www.cs.cmu.edu/~diyiy/docs/naacl16.pdf
 * http://www.aclweb.org/anthology/N16-1012
 * https://guillaumegenthial.github.io/sequence-to-sequence.html
+* https://offbit.github.io/how-to-read/ && https://richliao.github.io/supervised/classification/2016/12/26/textclassifier-HATN/
