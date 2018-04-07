@@ -39,7 +39,7 @@ Then run text similarity between the given headline and the summarization. We sh
 
 ## Stage 3 (Irony or not) (Used as a feature)
 
-A genuine news article should not be e irony (or should not contain mainly irony sentences)
+A genuine news article should not be a irony (or should not contain mainly irony sentences)
 
 ### Dataset
 * https://competitions.codalab.org/competitions/17468
@@ -56,7 +56,7 @@ A genuine news article should not be e irony (or should not contain mainly irony
 * http://compsocial.github.io/CREDBANK-data/
 * https://www.kdnuggets.com/datasets/index.html
 * https://competitions.codalab.org/
-
+* http://text-analytics101.rxnlp.com/2011/07/user-review-datasets_20.html
 
 
 # References
