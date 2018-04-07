@@ -8,8 +8,9 @@ Fake news detector
 * https://www.ijcai.org/proceedings/2017/0557.pdf
 * http://www.fakenewschallenge.org/
 * https://arxiv.org/abs/1708.05286
+* https://web.stanford.edu/class/cs224n/reports/2760496.pdf
 
-> OK, BUT WHAT DOES STANCE DETECTION HAVE TO DO WITH DETECTING FAKE NEWS?
+OK, BUT WHAT DOES STANCE DETECTION HAVE TO DO WITH DETECTING FAKE NEWS?
 ANSWER:
 There are two important ways the Stance Detection task is relevant for fake news.
 
