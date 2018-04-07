@@ -29,7 +29,19 @@ In this way, the various stances (or lack of a stance) news organizations take o
 * http://www.hlt.utdallas.edu/~saidul/stance/stance.html (***I cannot understand it***)
 * https://github.com/FakeNewsChallenge/fnc-1
 
-## Stage 2 (Fake news classification ( Fake or Not))
+## Stage 2 (Text body summarization + Similar or Not)
+My idea here is to run the body of a news through text summarization model that will produce a headline.
+Then run text similarity between the given headline and the summarization. We should use some kind of transfer learning here.
+
+### Dataset
+* https://github.com/dhwajraj/deep-siamese-text-similarity
+
+
+
+### Datasets
+* https://www.kaggle.com/sunnysai12345/news-summary
+
+## Stage 3 (Fake news classification ( Fake or Not))
 
 ### Datasets
 * https://www.kaggle.com/jruvika/fake-news-detection/data
@@ -39,6 +51,7 @@ In this way, the various stances (or lack of a stance) news organizations take o
 # MUST CHECK
 * https://github.com/BuzzFeedNews/everything For more data
 * http://compsocial.github.io/CREDBANK-data/
+* * https://www.kdnuggets.com/datasets/index.html
 
 
 
