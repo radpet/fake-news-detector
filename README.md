@@ -35,13 +35,16 @@ Then run text similarity between the given headline and the summarization. We sh
 
 ### Dataset
 * https://github.com/dhwajraj/deep-siamese-text-similarity
-
-
-
-### Datasets
 * https://www.kaggle.com/sunnysai12345/news-summary
 
-## Stage 3 (Fake news classification ( Fake or Not))
+## Stage 3 (Irony or not) (Used as a feature)
+
+A genuine news article should not be e irony (or should not contain mainly irony sentences)
+
+### Dataset
+* https://competitions.codalab.org/competitions/17468
+
+## Stage 4 (Fake news classification ( Fake or Not))
 
 ### Datasets
 * https://www.kaggle.com/jruvika/fake-news-detection/data
@@ -51,7 +54,8 @@ Then run text similarity between the given headline and the summarization. We sh
 # MUST CHECK
 * https://github.com/BuzzFeedNews/everything For more data
 * http://compsocial.github.io/CREDBANK-data/
-* * https://www.kdnuggets.com/datasets/index.html
+* https://www.kdnuggets.com/datasets/index.html
+* https://competitions.codalab.org/
 
 
 
