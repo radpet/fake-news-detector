@@ -1,8 +1,10 @@
+from datetime import datetime
+
 import pandas as pd
 import numpy as np
 from keras import Input
 from keras import Model
-from keras.callbacks import EarlyStopping
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.layers import Embedding, Bidirectional, LSTM, Concatenate, Dense, Dropout
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
@@ -10,15 +12,14 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 import os
+import pickle
 
-# todo explore the dataset
-
-
+# set based on the dataset expl
 NUM_WORDS_HEADLINE = 10000
 MAXLEN_HEADLINE = 32
 
 NUM_WORDS_BODY = 10000
-MAXLEN_BODY = 128
+MAXLEN_BODY = 360
 
 NUM_CLASSES = 4
 
@@ -89,13 +90,13 @@ def encode_with_bi_lstm(embedding_headline_weights, embedding_body_weights):
     embedding_headline = Embedding(embedding_headline_weights.shape[0], embedding_headline_weights.shape[1],
                                    weights=[embedding_headline_weights],
                                    name='embedding_headline', trainable=False)(input_headline)
-    headline_context_vector = Bidirectional(LSTM(32), name='bi_context_headline')(embedding_headline)
+    headline_context_vector = Bidirectional(LSTM(100), name='bi_context_headline')(embedding_headline)
 
     input_body = Input(shape=(MAXLEN_BODY,), name='input_body')
     embedding_body = Embedding(embedding_body_weights.shape[0], embedding_body_weights.shape[1],
                                weights=[embedding_body_weights],
                                name='embedding_body', trainable=False)(input_body)
-    body_context_vector = Bidirectional(LSTM(64), name='bi_context_body')(embedding_body)
+    body_context_vector = Bidirectional(LSTM(100), name='bi_context_body')(embedding_body)
 
     concat = Concatenate()([headline_context_vector, body_context_vector])
     out = Dense(64, activation='relu', name='dense1')(concat)
@@ -108,6 +109,11 @@ def encode_with_bi_lstm(embedding_headline_weights, embedding_body_weights):
 
     model.summary()
     return model
+
+
+def save_tokenizer(name, tokenizer):
+    with open(name, 'wb') as handle:
+        pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def run():
@@ -140,7 +146,7 @@ def run():
     X_test_headline = extract_from_zipped(X_test, 0)
     X_test_body = extract_from_zipped(X_test, 1)
 
-    print("Test shapes", X_train_headline.shape, X_train_body.shape)
+    print("Test shapes", X_test_headline.shape, X_test_body.shape)
 
     embedding_headline_weights = get_pretrained_embeddings(
         '/media/radoslav/ce763dbf-b2a6-4110-960f-2ef10c8c6bde/MachineLearning/glove.6B', tokenizer_headline)
@@ -152,9 +158,21 @@ def run():
 
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-    early_stopping = EarlyStopping(patience=2)
+    currentTime = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+    os.mkdir('checkpoints/' + currentTime)
+
+    currentCheckointFolder = os.path.join('checkpoints', currentTime)
+
+    save_tokenizer(os.path.join(currentCheckointFolder, 'tokenizer_headline.pkl'), tokenizer_headline)
+    save_tokenizer(os.path.join(currentCheckointFolder, 'tokenizer_body.pkl'), tokenizer_body)
+    save_tokenizer(os.path.join(currentCheckointFolder, 'label_to_id.pkl'), label_to_id)
+
+    early_stopping = EarlyStopping(patience=3)
+    model_checkpoint = ModelCheckpoint(
+        os.path.join(currentCheckointFolder, 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'), monitor='val_loss')
+
     model.fit([X_train_headline, X_train_body], y_train, validation_data=([X_test_headline, X_test_body], y_test),
-              class_weight=class_weights, batch_size=64, epochs=10, callbacks=[early_stopping])
+              class_weight=class_weights, batch_size=128, epochs=20, callbacks=[early_stopping, model_checkpoint])
 
     preds = model.predict([X_test_headline, X_test_body])
     preds_y = [np.argmax(pred) for pred in preds]
