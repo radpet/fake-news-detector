@@ -49,7 +49,7 @@ A genuine news article should not be a irony (or should not contain mainly irony
 ### Datasets
 * https://www.kaggle.com/jruvika/fake-news-detection/data
 * https://www.kaggle.com/mrisdal/fake-news/data
-
+* https://github.com/several27/FakeNewsCorpus
 
 # MUST CHECK
 * https://github.com/BuzzFeedNews/everything For more data
@@ -57,6 +57,7 @@ A genuine news article should not be a irony (or should not contain mainly irony
 * https://www.kdnuggets.com/datasets/index.html
 * https://competitions.codalab.org/
 * http://text-analytics101.rxnlp.com/2011/07/user-review-datasets_20.html
+* https://github.com/sumeetkr/AwesomeFakeNews
 
 
 # References
