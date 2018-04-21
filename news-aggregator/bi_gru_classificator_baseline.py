@@ -59,8 +59,8 @@ def get_model(input_dim, embeddings_matrix):
     input = Input(shape=(input_dim,))
     embedding = Embedding(embeddings_matrix.shape[0], embeddings_matrix.shape[1], weights=[embeddings_matrix],
                           trainable=False)(input)
-    rec = Bidirectional(GRU(32, unroll=True, dropout=0.2))(embedding)
-    dense = Dense(32, activation='relu')(rec)
+    rec = Bidirectional(GRU(200, unroll=True, dropout=0.2))(embedding)
+    dense = Dense(100, activation='relu')(rec)
     dropout = Dropout(0.4)(dense)
     output = Dense(NUM_CATEGORIES, activation='softmax')(dropout)
 
@@ -131,7 +131,7 @@ def main(current_checkpoint_folder=None, weights=None):
         model = load_model(os.path.join(current_checkpoint_folder, weights))
         initial_epoch = int(float(weights.split('.')[1][:2]))
 
-    model.fit(train_X, train_y, validation_data=(dev_X, dev_y), batch_size=64, epochs=initial_epoch + 10,
+    model.fit(train_X, train_y, validation_data=(dev_X, dev_y), batch_size=64, epochs=initial_epoch + 15,
               callbacks=[learning_rate_reducer, early_stopping, model_checkpoint, tensorboard],
               initial_epoch=initial_epoch)
 
