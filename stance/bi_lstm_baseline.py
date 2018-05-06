@@ -31,7 +31,7 @@ def load():
 def get_pretrained_embeddings(path, tokenizer):
     EMBEDDING_DIM = 200
     embeddings_index = {}
-    with open(os.path.join(path, 'glove.6B.200d.txt')) as f:
+    with open(os.path.join(path, 'glove.6B.200d.txt'),encoding='utf-8') as f:
         for line in f:
             values = line.split()
             word = values[0]
