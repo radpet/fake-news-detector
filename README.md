@@ -3,7 +3,7 @@ Fake news detector
 
 # Plan
 
-## Stage 1 (Stance Detection)
+## Stage 1 (Stance Detection) (done)
 * http://www.aclweb.org/anthology/N16-1138
 * https://www.ijcai.org/proceedings/2017/0557.pdf
 * http://www.fakenewschallenge.org/
@@ -50,6 +50,15 @@ A genuine news article should not be a irony (or should not contain mainly irony
 * https://www.kaggle.com/jruvika/fake-news-detection/data
 * https://www.kaggle.com/mrisdal/fake-news/data
 * https://github.com/several27/FakeNewsCorpus
+
+## Stage 5 (Topic classification based on heading (done), topic classification based on the summary, topic modeling of the content)
+
+The main purpose of this model is to classify the topics into 4 categories (more info at https://www.kaggle.com/uciml/news-aggregator-dataset)
+We can run the same classificator on the summary (the classificator was trained on short texts, but should experiment with longer). If we get different topics the news might not be trustworthy but a clickbait. We can run also unsupervised machine learning (LDA) to get topics.
+
+
+
+
 
 # MUST CHECK
 * https://github.com/BuzzFeedNews/everything For more data
