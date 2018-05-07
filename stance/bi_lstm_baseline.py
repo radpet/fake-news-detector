@@ -15,23 +15,34 @@ import os
 import pickle
 
 # set based on the dataset expl
-NUM_WORDS_HEADLINE = 10000
+NUM_WORDS_HEADLINE = 20000
 MAXLEN_HEADLINE = 32
 
-NUM_WORDS_BODY = 10000
+NUM_WORDS_BODY = 20000
 MAXLEN_BODY = 360
 
 NUM_CLASSES = 4
 
 
-def load():
+def load_full():
     return pd.read_csv("data/train/train.csv")
 
 
-def get_pretrained_embeddings(path, tokenizer):
-    EMBEDDING_DIM = 200
+def load_train():
+    return pd.read_csv('data/train/split/train.csv')
+
+
+def load_dev():
+    return pd.read_csv('data/train/split/dev.csv')
+
+
+def load_test():
+    return pd.read_csv('data/train/split/test.csv')
+
+
+def get_pretrained_embeddings(path, tokenizer, embedding_dim=200):
     embeddings_index = {}
-    with open(os.path.join(path, 'glove.6B.200d.txt'),encoding='utf-8') as f:
+    with open(os.path.join(path, 'glove.6B.{}d.txt'.format(embedding_dim)), encoding='utf-8') as f:
         for line in f:
             values = line.split()
             word = values[0]
@@ -40,7 +51,8 @@ def get_pretrained_embeddings(path, tokenizer):
 
     print('Found %s word vectors.' % len(embeddings_index))
     word_index = tokenizer.word_index
-    embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
+    print('Found %s words in the tokenizer index' % len(word_index))
+    embedding_matrix = np.zeros((len(word_index) + 1, embedding_dim))
     for word, i in word_index.items():
         embedding_vector = embeddings_index.get(word)
         if embedding_vector is not None:
@@ -49,37 +61,46 @@ def get_pretrained_embeddings(path, tokenizer):
     return embedding_matrix
 
 
-def preprocess_features(data):
+def preprocess_features(data, tokenizer_headline, tokenizer_body):
     X = {}
     X['headline'] = data['Headline']
     X['body'] = data['articleBody']
 
-    tokenizer_headline = Tokenizer(num_words=NUM_WORDS_HEADLINE)
-    tokenizer_headline.fit_on_texts(X['headline'])  # todo fit on a bigger corpus
     X['headline'] = tokenizer_headline.texts_to_sequences(X['headline'])
     X['headline'] = pad_sequences(X['headline'], maxlen=MAXLEN_HEADLINE)
 
-    tokenizer_body = Tokenizer(num_words=NUM_WORDS_BODY)
-    tokenizer_body.fit_on_texts(X['body'])
     X['body'] = tokenizer_body.texts_to_sequences(X['body'])
     X['body'] = pad_sequences(X['body'], maxlen=MAXLEN_BODY)
 
-    return X, tokenizer_headline, tokenizer_body
+    return X
 
 
-def preprocess_labels(data):
+def create_tokenizers(data):
+    tokenizer_headline = Tokenizer(num_words=NUM_WORDS_HEADLINE)
+    tokenizer_headline.fit_on_texts(data['Headline'])
+
+    tokenizer_body = Tokenizer(num_words=NUM_WORDS_BODY)
+    tokenizer_body.fit_on_texts(data['articleBody'])
+
+    return tokenizer_headline, tokenizer_body
+
+
+def preprocess_labels(data, label_to_id):
+    # print(label_to_id, id_to_label)
+    y = data['Stance']
+    y = y.map(lambda label: label_to_id[label]).values
+    one_hot = np.zeros((y.shape[0], len(label_to_id)))
+    one_hot[np.arange(y.shape[0]), y] = 1
+    # print(one_hot[:5])
+    return one_hot
+
+
+def map_labels_to_id(data):
     y = data['Stance']
     labels = list(set(y))
     label_to_id = {x: i for i, x in enumerate(labels)}
-    id_to_label = {i: x for i, x in enumerate(labels)}
 
-    # print(label_to_id, id_to_label)
-
-    y = y.map(lambda label: label_to_id[label]).values
-    one_hot = np.zeros((y.shape[0], len(labels)))
-    one_hot[np.arange(y.shape[0]), y] = 1
-    # print(one_hot[:5])
-    return one_hot, label_to_id, id_to_label
+    return label_to_id
 
 
 def encode_with_bi_lstm(embedding_headline_weights, embedding_body_weights):
@@ -90,7 +111,7 @@ def encode_with_bi_lstm(embedding_headline_weights, embedding_body_weights):
     embedding_headline = Embedding(embedding_headline_weights.shape[0], embedding_headline_weights.shape[1],
                                    weights=[embedding_headline_weights],
                                    name='embedding_headline', trainable=False)(input_headline)
-    headline_context_vector = Bidirectional(LSTM(100), name='bi_context_headline')(embedding_headline)
+    headline_context_vector = Bidirectional(LSTM(10), name='bi_context_headline')(embedding_headline)
 
     input_body = Input(shape=(MAXLEN_BODY,), name='input_body')
     embedding_body = Embedding(embedding_body_weights.shape[0], embedding_body_weights.shape[1],
@@ -99,10 +120,9 @@ def encode_with_bi_lstm(embedding_headline_weights, embedding_body_weights):
     body_context_vector = Bidirectional(LSTM(100), name='bi_context_body')(embedding_body)
 
     concat = Concatenate()([headline_context_vector, body_context_vector])
-    out = Dense(64, activation='relu', name='dense1')(concat)
+    out = Dense(16, activation='relu', name='dense1')(concat)
     out = Dropout(0.4)(out)
-    out = Dense(32, activation='relu', name='dense2')(out)
-    out = Dropout(0.3)(out)
+    out = Dense(8, activation='relu', name='dense2')(out)
     out = Dense(NUM_CLASSES, activation='softmax')(out)
 
     model = Model(inputs=[input_headline, input_body], outputs=out)
@@ -117,10 +137,21 @@ def save_tokenizer(name, tokenizer):
 
 
 def run():
-    data = load()
-    # todo save the tokenizers when doing the final training
-    X, tokenizer_headline, tokenizer_body = preprocess_features(data)
-    y, label_to_id, id_to_label = preprocess_labels(data)
+    data = load_full()
+    tokenizer_headline, tokenizer_body = create_tokenizers(data)
+
+    del data
+
+    train = load_train()
+
+    X_train = preprocess_features(train, tokenizer_headline, tokenizer_body)
+
+    label_to_id = map_labels_to_id(train)
+    y_train = preprocess_labels(train, label_to_id)
+
+    dev = load_dev()
+    X_dev = preprocess_features(dev, tokenizer_headline, tokenizer_body)
+    y_dev = preprocess_labels(dev, label_to_id)
 
     class_weights = {
         'unrelated': 1 / 0.73131,
@@ -130,26 +161,20 @@ def run():
     }
 
     class_weights = {label_to_id[label]: val for (label, val) in class_weights.items()}
-    # print(label_to_id)
-    # print(class_weights)
-    zipped = list(zip(X['headline'], X['body']))
-    X_train, X_test, y_train, y_test = train_test_split(zipped, y, stratify=y, random_state=123)
 
-    def extract_from_zipped(zipped, idx):
-        return np.array([pair[idx] for pair in zipped])
-
-    X_train_headline = extract_from_zipped(X_train, 0)
-    X_train_body = extract_from_zipped(X_train, 1)
+    X_train_headline = X_train['headline']
+    X_train_body = X_train['body']
 
     print("Train shapes", X_train_headline.shape, X_train_body.shape)
 
-    X_test_headline = extract_from_zipped(X_test, 0)
-    X_test_body = extract_from_zipped(X_test, 1)
+    X_dev_headline = X_dev['headline']
+    X_dev_body = X_dev['body']
 
-    print("Test shapes", X_test_headline.shape, X_test_body.shape)
+    print("Test shapes", X_dev_headline.shape, X_dev_body.shape)
 
     embedding_headline_weights = get_pretrained_embeddings(
-        '/media/radoslav/ce763dbf-b2a6-4110-960f-2ef10c8c6bde/MachineLearning/glove.6B', tokenizer_headline)
+        '/media/radoslav/ce763dbf-b2a6-4110-960f-2ef10c8c6bde/MachineLearning/glove.6B', tokenizer_headline,
+        embedding_dim=50)
     embedding_body_weights = get_pretrained_embeddings(
         '/media/radoslav/ce763dbf-b2a6-4110-960f-2ef10c8c6bde/MachineLearning/glove.6B', tokenizer_body)
 
@@ -171,19 +196,38 @@ def run():
     model_checkpoint = ModelCheckpoint(
         os.path.join(currentCheckointFolder, 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'), monitor='val_loss')
 
-    model.fit([X_train_headline, X_train_body], y_train, validation_data=([X_test_headline, X_test_body], y_test),
-              class_weight=class_weights, batch_size=128, epochs=20, callbacks=[early_stopping, model_checkpoint])
+    model.fit([X_train_headline, X_train_body], y_train, validation_data=([X_dev_headline, X_dev_body], y_dev),
+              class_weight=class_weights, batch_size=256, epochs=100, callbacks=[early_stopping, model_checkpoint])
 
-    preds = model.predict([X_test_headline, X_test_body])
-    preds_y = [np.argmax(pred) for pred in preds]
+    def show_eval_metrics(X, y_true, name='dev'):
+        preds = model.predict(X)
+        preds_y = np.argmax(preds, axis=1).reshape((-1, 1))
 
-    y_test_label = [np.argmax(one_hot) for one_hot in y_test]
+        conf_matrix = confusion_matrix(y_true=y_true, y_pred=preds_y)
+        print(conf_matrix)
 
-    conf_matrix = confusion_matrix(y_true=y_test_label, y_pred=preds_y)
-    print(conf_matrix)
+        with open(os.path.join(currentCheckointFolder, 'conf_matrix_{}.txt'.format(name)), 'w') as f:
+            f.write(str(conf_matrix))
 
-    report = classification_report(y_true=y_test_label, y_pred=preds_y)
-    print(report)
+        report = classification_report(y_true=y_true, y_pred=preds_y)
+
+        with open(os.path.join(currentCheckointFolder, 'classification_report_{}.txt'.format(name)), 'w') as f:
+            f.write(str(report))
+
+        print(report)
+
+    show_eval_metrics([X_train_headline, X_train_body], np.argmax(y_train, axis=1).reshape((-1, 1)), name='train')
+
+    show_eval_metrics([X_dev_headline, X_dev_body], np.argmax(y_dev, axis=1).reshape((-1, 1)), name='dev')
+
+    test = load_test()
+    X_test = preprocess_features(test, tokenizer_headline, tokenizer_body)
+    y_test = preprocess_labels(test, label_to_id)
+
+    X_test_headline = X_test['headline']
+    X_test_body = X_test['body']
+
+    show_eval_metrics([X_test_headline, X_test_body], np.argmax(y_test, axis=1).reshape((-1, 1)), name='test')
 
 
 if __name__ == '__main__':
