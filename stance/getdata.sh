@@ -8,3 +8,7 @@ curl -o data/train/train_stances.csv $train_stances
 curl -o data/train/train_bodies.csv $train_bodies
 
 python3 mergedata.py
+
+mkdir data/train/split
+
+python3 split_train.py
