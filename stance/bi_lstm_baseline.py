@@ -5,7 +5,7 @@ import numpy as np
 from keras import Input
 from keras import Model
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.layers import Embedding, Bidirectional, LSTM, Concatenate, Dense, Dropout
+from keras.layers import Embedding, Bidirectional, LSTM, Concatenate, Dense, Dropout, BatchNormalization
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.metrics import confusion_matrix
@@ -15,11 +15,13 @@ import os
 import pickle
 
 # set based on the dataset expl
+from common.attention import AttentionWithContext
+
 NUM_WORDS_HEADLINE = 20000
 MAXLEN_HEADLINE = 32
 
 NUM_WORDS_BODY = 20000
-MAXLEN_BODY = 360
+MAXLEN_BODY = 120
 
 NUM_CLASSES = 4
 
@@ -111,16 +113,22 @@ def encode_with_bi_lstm(embedding_headline_weights, embedding_body_weights):
     embedding_headline = Embedding(embedding_headline_weights.shape[0], embedding_headline_weights.shape[1],
                                    weights=[embedding_headline_weights],
                                    name='embedding_headline', trainable=False)(input_headline)
-    headline_context_vector = Bidirectional(LSTM(10), name='bi_context_headline')(embedding_headline)
+    headline_context_vector = Bidirectional(LSTM(10, dropout=0.2, return_sequences=True), name='bi_context_headline')(
+        embedding_headline)
+    headline_context_vector_att = AttentionWithContext()(headline_context_vector)
 
     input_body = Input(shape=(MAXLEN_BODY,), name='input_body')
     embedding_body = Embedding(embedding_body_weights.shape[0], embedding_body_weights.shape[1],
                                weights=[embedding_body_weights],
                                name='embedding_body', trainable=False)(input_body)
-    body_context_vector = Bidirectional(LSTM(100), name='bi_context_body')(embedding_body)
+    body_context_vector = Bidirectional(LSTM(50, dropout=0.2, return_sequences=True), name='bi_context_body')(
+        embedding_body)
+    body_context_vector_att = AttentionWithContext()(body_context_vector)
 
-    concat = Concatenate()([headline_context_vector, body_context_vector])
-    out = Dense(16, activation='relu', name='dense1')(concat)
+    concat = Concatenate()([headline_context_vector_att, body_context_vector_att])
+    out = BatchNormalization()(concat)
+    out = Dense(16, activation='relu', name='dense1')(out)
+    out = BatchNormalization()(out)
     out = Dropout(0.4)(out)
     out = Dense(8, activation='relu', name='dense2')(out)
     out = Dense(NUM_CLASSES, activation='softmax')(out)
@@ -192,12 +200,12 @@ def run():
     save_tokenizer(os.path.join(currentCheckointFolder, 'tokenizer_body.pkl'), tokenizer_body)
     save_tokenizer(os.path.join(currentCheckointFolder, 'label_to_id.pkl'), label_to_id)
 
-    early_stopping = EarlyStopping(patience=3)
+    early_stopping = EarlyStopping(patience=5)
     model_checkpoint = ModelCheckpoint(
         os.path.join(currentCheckointFolder, 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'), monitor='val_loss')
 
     model.fit([X_train_headline, X_train_body], y_train, validation_data=([X_dev_headline, X_dev_body], y_dev),
-              class_weight=class_weights, batch_size=256, epochs=100, callbacks=[early_stopping, model_checkpoint])
+              class_weight=class_weights, batch_size=128, epochs=100, callbacks=[early_stopping, model_checkpoint])
 
     def show_eval_metrics(X, y_true, name='dev'):
         preds = model.predict(X)
@@ -220,14 +228,14 @@ def run():
 
     show_eval_metrics([X_dev_headline, X_dev_body], np.argmax(y_dev, axis=1).reshape((-1, 1)), name='dev')
 
-    test = load_test()
-    X_test = preprocess_features(test, tokenizer_headline, tokenizer_body)
-    y_test = preprocess_labels(test, label_to_id)
-
-    X_test_headline = X_test['headline']
-    X_test_body = X_test['body']
-
-    show_eval_metrics([X_test_headline, X_test_body], np.argmax(y_test, axis=1).reshape((-1, 1)), name='test')
+    # test = load_test()
+    # X_test = preprocess_features(test, tokenizer_headline, tokenizer_body)
+    # y_test = preprocess_labels(test, label_to_id)
+    #
+    # X_test_headline = X_test['headline']
+    # X_test_body = X_test['body']
+    #
+    # show_eval_metrics([X_test_headline, X_test_body], np.argmax(y_test, axis=1).reshape((-1, 1)), name='test')
 
 
 if __name__ == '__main__':
