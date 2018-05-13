@@ -4,6 +4,8 @@ from common.TokenizerSerializer import TokenizerSerializer
 from keras.models import load_model
 import pandas as pd
 from sklearn.metrics import confusion_matrix, classification_report
+
+from common.attention import AttentionWithContext
 from stance.bi_lstm_baseline import MAXLEN_HEADLINE, MAXLEN_BODY
 
 import os
@@ -12,7 +14,7 @@ import pickle
 
 
 def load_checkpoint(path):
-    return load_model(path)
+    return load_model(path, custom_objects={'AttentionWithContext': AttentionWithContext})
 
 
 def load_data(path):
@@ -45,7 +47,7 @@ def get_labels(data, label_to_id):
 
 
 def run():
-    checkpoint_folder = './checkpoints/2018-04-08_14:42:10'
+    checkpoint_folder = './checkpoints/2018-05-13_16:54:37'
     tokenizer_headline = TokenizerSerializer.load(os.path.join(checkpoint_folder, 'tokenizer_headline.pkl'))
     tokenizer_body = TokenizerSerializer.load(os.path.join(checkpoint_folder, 'tokenizer_body.pkl'))
 
@@ -54,13 +56,13 @@ def run():
 
     id_to_label = {i: label for label, i in label_to_id.items()}
 
-    data = load_data(path='./data/test/test.csv')
+    data = load_data(path='./data/train/split/train.csv')
     X_headline, X_body = get_features(tokenizer_body=tokenizer_body, tokenizer_headline=tokenizer_headline, data=data)
     y = get_labels(data, label_to_id)
 
     print(X_headline.shape)
     print(X_body.shape)
-    model = load_checkpoint(os.path.join(checkpoint_folder, 'weights.17-0.34.hdf5'))
+    model = load_checkpoint(os.path.join(checkpoint_folder, 'weights.14-0.74.hdf5'))
     model.summary()
 
     predictions = model.predict([X_headline, X_body])

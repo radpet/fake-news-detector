@@ -5,23 +5,23 @@ import numpy as np
 from keras import Input
 from keras import Model
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.layers import Embedding, Bidirectional, LSTM, Concatenate, Dense, Dropout, BatchNormalization
+from keras.layers import Embedding, Bidirectional, LSTM, Concatenate, Dense, Dropout, BatchNormalization, GRU
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split
 import os
 import pickle
 
 # set based on the dataset expl
+from common.GloveEmbeddings import GloveEmbeddings
 from common.attention import AttentionWithContext
 
 NUM_WORDS_HEADLINE = 20000
 MAXLEN_HEADLINE = 32
 
 NUM_WORDS_BODY = 20000
-MAXLEN_BODY = 120
+MAXLEN_BODY = 500
 
 NUM_CLASSES = 4
 
@@ -113,7 +113,7 @@ def encode_with_bi_lstm(embedding_headline_weights, embedding_body_weights):
     embedding_headline = Embedding(embedding_headline_weights.shape[0], embedding_headline_weights.shape[1],
                                    weights=[embedding_headline_weights],
                                    name='embedding_headline', trainable=False)(input_headline)
-    headline_context_vector = Bidirectional(LSTM(10, dropout=0.2, return_sequences=True), name='bi_context_headline')(
+    headline_context_vector = Bidirectional(GRU(10, dropout=0.2, return_sequences=True), name='bi_context_headline')(
         embedding_headline)
     headline_context_vector_att = AttentionWithContext()(headline_context_vector)
 
@@ -121,13 +121,12 @@ def encode_with_bi_lstm(embedding_headline_weights, embedding_body_weights):
     embedding_body = Embedding(embedding_body_weights.shape[0], embedding_body_weights.shape[1],
                                weights=[embedding_body_weights],
                                name='embedding_body', trainable=False)(input_body)
-    body_context_vector = Bidirectional(LSTM(50, dropout=0.2, return_sequences=True), name='bi_context_body')(
+    body_context_vector = Bidirectional(GRU(50, dropout=0.2, return_sequences=True), name='bi_context_body')(
         embedding_body)
     body_context_vector_att = AttentionWithContext()(body_context_vector)
 
     concat = Concatenate()([headline_context_vector_att, body_context_vector_att])
-    out = BatchNormalization()(concat)
-    out = Dense(16, activation='relu', name='dense1')(out)
+    out = Dense(32, activation='relu', name='dense1')(concat)
     out = BatchNormalization()(out)
     out = Dropout(0.4)(out)
     out = Dense(8, activation='relu', name='dense2')(out)
@@ -180,11 +179,13 @@ def run():
 
     print("Test shapes", X_dev_headline.shape, X_dev_body.shape)
 
-    embedding_headline_weights = get_pretrained_embeddings(
-        '/media/radoslav/ce763dbf-b2a6-4110-960f-2ef10c8c6bde/MachineLearning/glove.6B', tokenizer_headline,
-        embedding_dim=50)
-    embedding_body_weights = get_pretrained_embeddings(
-        '/media/radoslav/ce763dbf-b2a6-4110-960f-2ef10c8c6bde/MachineLearning/glove.6B', tokenizer_body)
+    embedding_headline_weights = GloveEmbeddings(
+        '/media/radoslav/ce763dbf-b2a6-4110-960f-2ef10c8c6bde/MachineLearning/glove.6B/glove.6B.100d.txt',
+        100).load().get_embedding_matrix_for_tokenizer(tokenizer_headline)
+
+    embedding_body_weights = GloveEmbeddings(
+        '/media/radoslav/ce763dbf-b2a6-4110-960f-2ef10c8c6bde/MachineLearning/glove.6B/glove.6B.300d.txt',
+        300).load().get_embedding_matrix_for_tokenizer(tokenizer_body)
 
     model = encode_with_bi_lstm(embedding_headline_weights=embedding_headline_weights,
                                 embedding_body_weights=embedding_body_weights)
