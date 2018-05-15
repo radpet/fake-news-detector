@@ -44,6 +44,7 @@ Remaining tasks:
 ## Performance
 
 2BI_GRU_2_DENSE - TBA
+
 2BI_GRU_ATT_2_DENSE - [classification report](https://github.com/radpet/fake-news-detector/blob/master/stance/checkpoints/2018-05-13_16:54:37/classification_report_dev.txt)
 
 
