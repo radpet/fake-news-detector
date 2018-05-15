@@ -41,5 +41,36 @@ Remaining tasks:
 * Experiment adding more features derived from other models.
 * Since we introduced attention mechanism we hope that using the learned weights we can visualize which phrases the network emphasize on.
 
+## Performance
+
+2BI_GRU_2_DENSE - TBA
+2BI_GRU_ATT_2_DENSE - [classification report](https://github.com/radpet/fake-news-detector/blob/master/stance/checkpoints/2018-05-13_16:54:37/classification_report_dev.txt)
+
+
+# Headline categorization
+
+## Motivation
+
+Nowadays more and more article publishing websites use tricky techniques to bring more visitors and expand its audience. Some of this techniques include classifying an article in a currently trending category in order to bring more viewes. Our approach to battle this is to introduce solution that assigns one of the 4 categories (business; science and technology; entertainment; health) to the headline of the article. Assigning categories to headlines have a lot of benefits such as allowing the search of an article not only by keywords but by choosing one of those 4 domains. Another positive is that if the predicted domain differs a lot from the one given by the source the article might not be that trustworthy.
+
+## Implementation
+
+The dataset we used was taken from [https://www.kaggle.com/uciml/news-aggregator-dataset](https://www.kaggle.com/uciml/news-aggregator-dataset). We split the data in train/dev/test(75/16.67/8.33) with stratify.
+
+Models:
+* We experimented with bidirectional recurrent network and pretrained glove embeddings. The model can be seen [here](https://github.com/radpet/fake-news-detector/blob/master/news-aggregator/bi_gru_classificator_baseline.py). We provide a [checkpoint](https://github.com/radpet/fake-news-detector/tree/master/news-aggregator/checkpoints).
+
+## Performance
+
+TBA
+
+# Sentiment (Irony Detection)
+
+## Motivation
+TBA
+
+## Implementation
+
+https://github.com/radpet/fake-news-detector/tree/master/irony
 
 
