@@ -52,7 +52,7 @@ Remaining tasks:
 
 ## Motivation
 
-Nowadays more and more article publishing websites use tricky techniques to bring more visitors and expand its audience. Some of this techniques include classifying an article in a currently trending category in order to bring more viewes. Our approach to battle this is to introduce solution that assigns one of the 4 categories (business; science and technology; entertainment; health) to the headline of the article. Assigning categories to headlines has a lot of benefits such as allowing the search of an article not only by keywords but by choosing one of those 4 domains. Another positive is that if the predicted domain differs a lot from the one given by the source the article might not be that trustworthy.
+Nowadays more and more article publishing websites use tricky techniques to bring more visitors and expand its audience. Some of this techniques include classifying an article in a currently trending category in order to bring more viewes. Our approach to battle this is to introduce solution that assigns one of the 4 categories (business; science and technology; entertainment; health) to the headline of the article. Assigning categories to headlines have a lot of benefits such as allowing the search of an article not only by keywords but by choosing one of these 4 domains. Another positive is that if the predicted domain differs a lot from the one given by the source the article might not be that trustworthy.
 
 ## Implementation
 
