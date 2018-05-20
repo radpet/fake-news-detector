@@ -59,7 +59,7 @@ Nowadays more and more article publishing websites use tricky techniques to brin
 The dataset we used was taken from [https://www.kaggle.com/uciml/news-aggregator-dataset](https://www.kaggle.com/uciml/news-aggregator-dataset). We split the data in train/dev/test(75/16.67/8.33) with stratify.
 
 Models:
-* We experimented with bidirectional recurrent network and pretrained glove embeddings. The model can be seen [here](https://github.com/radpet/fake-news-detector/blob/master/news-aggregator/bi_gru_classificator_baseline.py). We provide a [checkpoint](https://github.com/radpet/fake-news-detector/tree/master/news-aggregator/checkpoints).
+* We experimented with bidirectional recurrent network and pretrained glove embeddings. The model can be seen [here](https://github.com/radpet/fake-news-detector/blob/master/news_aggregator/bi_gru_classificator_baseline.py). We provide a [checkpoint](https://github.com/radpet/fake-news-detector/tree/master/news-aggregator/checkpoints).
 
 ## Performance
 
@@ -69,13 +69,13 @@ TBA
 
 ## Motivation
 We all want the news and articles we read to be straightforward and unambiguous. Humor, irony and sarcasm can be good tools to tell a story or bring up a point, but often they cause misunderstanding and confusion if taken seriously.
-By detecting if a statement is ironic or not we can give insight wether the article is serious or satirical.
+By detecting if a statement is ironic or not we can give insight whether the article is serious or satirical.
 
 ## [Implementation](https://github.com/radpet/fake-news-detector/tree/master/irony)
 The dataset we used was provided by [SemEval](https://competitions.codalab.org/competitions/17468). Data exploration can be found [here](https://github.com/radpet/fake-news-detector/blob/master/irony/Data.ipynb).
 
 #### [Baseline](https://github.com/radpet/fake-news-detector/blob/master/irony/baseline.ipynb)
-We used Tf-idf vectorizer to encode the tweets and Logistic regression to classify wether they are ironic or not. This approach achieves 0.65 F1 score.
+We used Tf-idf vectorizer to encode the tweets and Logistic regression to classify whether they are ironic or not. This approach achieves 0.65 F1 score.
 
 #### Models
 * We used pretrained Glove embeddings, trained on english tweets. The vectors are encoded through a Bidirectional LSTM layer and an Attention layer. Afterwards we use 2 dense layers to classify the extracted features. This model achieves 0.66 F1 score.

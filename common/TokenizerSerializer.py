@@ -11,4 +11,5 @@ class TokenizerSerializer():
 
     @staticmethod
     def load(name):
-        return pickle.load(open(name, "rb"))
+        with open(name, 'rb') as f:
+            return pickle.load(f)
