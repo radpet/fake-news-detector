@@ -53,12 +53,17 @@
         var $p = $('<p>');
         var $orig = $('<p>');
         var c = 0;
+        var maxAtt = -1.0;
+        for(var att of sample['att_score']){
+           maxAtt = Math.max(maxAtt, att);
+        }
+
         for(var token of sample['text']){
           if(token =='<PAD>')continue;
           var $span = $('<span>');
           $span.text(token+' ');
           $span.clone().appendTo($orig);
-          $span.css('background-color','rgb(0%,100%,0%)').css('opacity',sample['att_score'][c]);
+          $span.css('background-color','rgb(0%,100%,0%)').css('opacity',sample['att_score'][c]/maxAtt);
           $span.appendTo($p);
           c++;
         }
