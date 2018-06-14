@@ -1,0 +1,102 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<body>
+
+<form id="jsonFile" name="jsonFile" enctype="multipart/form-data" method="post">
+
+    <fieldset>
+        <h2>Attention Heatmap</h2>
+        <input type='file' id='fileinput'>
+        <input type='button' id='btnLoad' value='Load' onclick='loadFile();'>
+    </fieldset>
+</form>
+
+<div id="viewer">
+
+</div>
+
+<script type="text/javascript">
+
+  function loadFile() {
+    var input, file, fr;
+
+    if (typeof window.FileReader !== 'function') {
+      alert("The file API isn't supported on this browser yet.");
+      return;
+    }
+
+    input = document.getElementById('fileinput');
+    if (!input) {
+      alert("Um, couldn't find the fileinput element.");
+    }
+    else if (!input.files) {
+      alert("This browser doesn't seem to support the `files` property of file inputs.");
+    }
+    else if (!input.files[0]) {
+      alert("Please select a file before clicking 'Load'");
+    }
+    else {
+      file = input.files[0];
+      fr = new FileReader();
+      fr.onload = receivedText;
+      fr.readAsText(file);
+    }
+
+    function receivedText(e) {
+      let lines = e.target.result;
+      var heatmap = JSON.parse(lines);
+      console.log(heatmap);
+      var $viewer = $('#viewer');
+      for(var sample of heatmap){
+        var $p = $('<p>');
+        var $orig = $('<p>');
+        var c = 0;
+        for(var token of sample['text']){
+          if(token =='<PAD>')continue;
+          var $span = $('<span>');
+          $span.text(token+' ');
+          $span.clone().appendTo($orig);
+          $span.css('background-color','rgb(0%,100%,0%)').css('opacity',sample['att_score'][c]);
+          $span.appendTo($p);
+          c++;
+        }
+        var $pred = $('<span>');
+        $pred.text('Predicted: '+sample['pred']).css('background-color','lightblue').css('margin-right','20px');
+        $pred.appendTo($p);
+
+        var $label = $('<span>')
+        $label.text('True label: '+sample['label']).css('background-color','red');
+        $label.appendTo($p);
+        $orig.appendTo($viewer);
+        $p.appendTo($viewer);
+      }
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+
+</body>
+</html>

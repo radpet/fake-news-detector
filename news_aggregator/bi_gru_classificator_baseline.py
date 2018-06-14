@@ -27,6 +27,13 @@ LABEL_DICT = {
     'm': 3  # health
 }
 
+LABEL_DICT_FULL = {
+    'b': 'business',
+    't': 'science',
+    'e': 'fun',
+    'm': 'health'
+}
+
 
 def load():
     train = pd.read_csv('data/train.csv')

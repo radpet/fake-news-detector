@@ -4,6 +4,7 @@ from keras import regularizers
 from keras.engine import Layer
 import keras.backend as K
 
+
 # https://gist.github.com/cbaziotis/7ef97ccf71cbc14366835198c09809d2
 
 def dot_product(x, kernel):
@@ -48,7 +49,7 @@ class AttentionWithContext(Layer):
     def __init__(self,
                  W_regularizer=None, u_regularizer=None, b_regularizer=None,
                  W_constraint=None, u_constraint=None, b_constraint=None,
-                 bias=True, **kwargs):
+                 bias=True, return_att=False, **kwargs):
 
         self.supports_masking = True
         self.init = initializers.get('glorot_uniform')
@@ -62,6 +63,7 @@ class AttentionWithContext(Layer):
         self.b_constraint = constraints.get(b_constraint)
 
         self.bias = bias
+        self.return_att = return_att
         super(AttentionWithContext, self).__init__(**kwargs)
 
     def build(self, input_shape):
@@ -113,8 +115,10 @@ class AttentionWithContext(Layer):
         a /= K.cast(K.sum(a, axis=1, keepdims=True) + K.epsilon(), K.floatx())
 
         a = K.expand_dims(a)
-        weighted_input = x * a
-        return K.sum(weighted_input, axis=1)
+        weighted_input = K.sum(x * a, axis=1)
+        if self.return_att:
+            return [a, weighted_input]
+        return weighted_input
 
     def compute_output_shape(self, input_shape):
         return input_shape[0], input_shape[-1]
