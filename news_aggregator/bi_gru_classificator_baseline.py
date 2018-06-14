@@ -1,6 +1,6 @@
 import os
-
 from datetime import datetime
+
 import numpy as np
 import pandas as pd
 from keras import Input
@@ -17,7 +17,7 @@ from common.attention import AttentionWithContext
 
 NUM_CATEGORIES = 4
 # TODO tune based on data exploration results
-MAX_LEN_HEADING = 32
+MAX_LEN_HEADING = 16
 MAX_NUM_WORDS = 30000
 
 LABEL_DICT = {

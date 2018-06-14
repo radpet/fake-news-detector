@@ -93,6 +93,10 @@ class AttentionWithContext(Layer):
         # do not pass the mask to the next layers
         return None
 
+    def set_weights(self, weights):
+        self.W = weights[0]
+        self.b = weights[1]
+
     def call(self, x, mask=None):
         uit = dot_product(x, self.W)
 
@@ -121,4 +125,6 @@ class AttentionWithContext(Layer):
         return weighted_input
 
     def compute_output_shape(self, input_shape):
+        if self.return_att:
+            return [(input_shape[0], input_shape[1], 1,), (input_shape[0], input_shape[-1])]
         return input_shape[0], input_shape[-1]

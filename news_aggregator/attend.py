@@ -28,9 +28,13 @@ def run(tokenizer_path, weights_path):
     LABEL_DICT_REV = {val: key for key, val in LABEL_DICT.items()}
     preds = np.argmax(preds, axis=1)
     y_preds = [LABEL_DICT_FULL[LABEL_DICT_REV[x]] for x in preds]
+    att_layer_mod = AttentionWithContext(return_att=True)
+    att_layer_mod.set_weights(model.layers[3].weights)
+    att_layer_mod(model.layers[2].output)
     att_layer = Model(inputs=model.input,
-                      outputs=model.layers[4].output)
-    att_scores = att_layer.predict(test_x)
+                      outputs=att_layer_mod.output)
+    att_scores, att_cv = att_layer.predict(test_x)
+    att_scores = np.reshape(att_scores, [-1, 16])
     heatmap = []
     reverse_word_map = dict(map(reversed, tokenizer.word_index.items()))
     reverse_word_map[0] = '<PAD>'
@@ -49,4 +53,4 @@ def run(tokenizer_path, weights_path):
 
 
 if __name__ == '__main__':
-    run('./checkpoints/2018-05-20_14:35:26/tokenizer', './checkpoints/2018-05-20_14:35:26/weights.14-0.16.hdf5')
+    run('./checkpoints/2018-06-15_00:21:17/tokenizer', './checkpoints/2018-06-15_00:21:17/weights.14-0.16.hdf5')

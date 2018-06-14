@@ -53,17 +53,16 @@
         var $p = $('<p>');
         var $orig = $('<p>');
         var c = 0;
-        var maxAtt = -1.0;
-        for(var att of sample['att_score']){
-           maxAtt = Math.max(maxAtt, att);
-        }
+
+        var mean = 1/ sample['att_score'].length
 
         for(var token of sample['text']){
           if(token =='<PAD>')continue;
           var $span = $('<span>');
           $span.text(token+' ');
           $span.clone().appendTo($orig);
-          $span.css('background-color','rgb(0%,100%,0%)').css('opacity',sample['att_score'][c]/maxAtt);
+          $span.css('background-color','hsl(151, 100%,'+(1-(sample['att_score'][c]*Math.pow(100,sample['att_score'][c])))*100+'%)');
+          $span.attr('data-att',sample['att_score'][c]);
           $span.appendTo($p);
           c++;
         }
@@ -79,6 +78,8 @@
       }
     }
   }
+
+
 
 
 

@@ -19,7 +19,7 @@ def load_data(path):
 
 
 def run():
-    checkpoint_folder = './checkpoints/2018-05-20_14:35:26'
+    checkpoint_folder = './checkpoints/2018-06-15_00:21:17'
     weights = 'weights.14-0.16.hdf5'
 
     model = load_checkpoint(os.path.join(checkpoint_folder, weights))
