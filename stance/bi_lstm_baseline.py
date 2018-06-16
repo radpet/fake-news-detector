@@ -25,6 +25,13 @@ MAXLEN_BODY = 500
 
 NUM_CLASSES = 4
 
+LABELS_DICT = {
+    'agree': 0,
+    'discuss': 1,
+    'unrelated': 2,
+    'disagree': 3
+}
+
 
 def load_full():
     return pd.read_csv("data/train/train.csv")
@@ -97,12 +104,9 @@ def preprocess_labels(data, label_to_id):
     return one_hot
 
 
-def map_labels_to_id(data):
-    y = data['Stance']
-    labels = list(set(y))
-    label_to_id = {x: i for i, x in enumerate(labels)}
+def map_labels_to_id():
 
-    return label_to_id
+    return LABELS_DICT
 
 
 def encode_with_bi_lstm(embedding_headline_weights, embedding_body_weights):
@@ -153,7 +157,7 @@ def run():
 
     X_train = preprocess_features(train, tokenizer_headline, tokenizer_body)
 
-    label_to_id = map_labels_to_id(train)
+    label_to_id = map_labels_to_id()
     y_train = preprocess_labels(train, label_to_id)
 
     dev = load_dev()
@@ -206,7 +210,7 @@ def run():
         os.path.join(currentCheckointFolder, 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'), monitor='val_loss')
 
     model.fit([X_train_headline, X_train_body], y_train, validation_data=([X_dev_headline, X_dev_body], y_dev),
-              class_weight=class_weights, batch_size=128, epochs=100, callbacks=[early_stopping, model_checkpoint])
+              class_weight=class_weights, batch_size=128, epochs=20, callbacks=[early_stopping, model_checkpoint])
 
     def show_eval_metrics(X, y_true, name='dev'):
         preds = model.predict(X)

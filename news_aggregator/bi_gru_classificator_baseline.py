@@ -17,7 +17,7 @@ from common.attention import AttentionWithContext
 
 NUM_CATEGORIES = 4
 # TODO tune based on data exploration results
-MAX_LEN_HEADING = 16
+MAX_LEN_HEADING = 32
 MAX_NUM_WORDS = 30000
 
 LABEL_DICT = {
@@ -33,6 +33,8 @@ LABEL_DICT_FULL = {
     'e': 'fun',
     'm': 'health'
 }
+
+LABEL_DICT_REV = {val: key for key, val in LABEL_DICT.items()}
 
 
 def load():
@@ -89,15 +91,15 @@ def create_tokenizer(data):
     return tokenizer
 
 
-def to_sequence(data, tokenizer):
+def to_sequence(data, tokenizer, maxlen):
     tokenized = tokenizer.texts_to_sequences(data)
-    tokenized = pad_sequences(tokenized, maxlen=MAX_LEN_HEADING)
+    tokenized = pad_sequences(tokenized, maxlen=maxlen)
     return tokenized
 
 
-def get_features(data, tokenizer):
+def get_features(data, tokenizer, maxlen=32):
     preprocessed_text = preprocess_text(get_text(data))
-    as_sequence = to_sequence(preprocessed_text, tokenizer)
+    as_sequence = to_sequence(preprocessed_text, tokenizer, maxlen)
     return as_sequence
 
 

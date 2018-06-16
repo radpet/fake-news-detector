@@ -56,7 +56,7 @@ def run():
 
     id_to_label = {i: label for label, i in label_to_id.items()}
 
-    data = load_data(path='./data/train/split/train.csv')
+    data = load_data(path='./data/train/split/test.csv')
     X_headline, X_body = get_features(tokenizer_body=tokenizer_body, tokenizer_headline=tokenizer_headline, data=data)
     y = get_labels(data, label_to_id)
 

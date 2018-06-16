@@ -6,7 +6,8 @@ from keras.models import load_model
 
 from common.TokenizerSerializer import TokenizerSerializer
 from common.attention import AttentionWithContext
-from news_aggregator.bi_gru_classificator_baseline import get_features, get_labels, LABEL_DICT, LABEL_DICT_FULL
+from news_aggregator.bi_gru_classificator_baseline import get_features, get_labels, LABEL_DICT, LABEL_DICT_FULL, \
+    LABEL_DICT_REV
 from news_aggregator.predict import load_data
 
 
@@ -25,7 +26,6 @@ def run(tokenizer_path, weights_path):
     test_y = get_labels(test).tolist()
     preds = model.predict(test_x)
 
-    LABEL_DICT_REV = {val: key for key, val in LABEL_DICT.items()}
     preds = np.argmax(preds, axis=1)
     y_preds = [LABEL_DICT_FULL[LABEL_DICT_REV[x]] for x in preds]
     att_layer_mod = AttentionWithContext(return_att=True)
