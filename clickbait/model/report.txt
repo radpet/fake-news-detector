@@ -1,0 +1,10 @@
+***** Classification Report *****
+             precision    recall  f1-score   support
+
+        0.0       0.95      0.96      0.96      4000
+        1.0       0.96      0.95      0.96      4000
+
+avg / total       0.96      0.96      0.96      8000
+***** Confusion Matrix *****
+[[3855  145]
+ [ 197 3803]]
