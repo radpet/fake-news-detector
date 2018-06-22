@@ -3,142 +3,120 @@ import os
 import pickle
 from datetime import datetime
 
+import keras
 import numpy as np
-import pandas as pd
 from keras import Input, Model
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.layers import Concatenate, Dense, Dropout
-from numpy.linalg import norm
-from numpy.ma import dot
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer, TfidfTransformer
+from keras.layers import Dense, Dropout
+from keras.optimizers import Adam
 from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.utils import compute_class_weight
 
-from stance.bi_lstm_baseline import preprocess_labels, LABELS_DICT
+from stance.utils import Loader, FeatureExtractor, ID_TO_LABEL, f_scorer
 
-VECT_DIM = 5000
-NUM_CLASSES = 4
-
-
-def create_count_tokenizers(train):
-    corpus = train['Headline'].append(train['articleBody'])
-    count_tokenizer = CountVectorizer(max_features=VECT_DIM, stop_words='english').fit(corpus)
-    return count_tokenizer
-
-
-def create_idf_tokenizers(train, test):
-    corpus = train['Headline'].append(test['Headline']).append(train['articleBody']).append(test['articleBody'])
-    idf_tokenizer = TfidfVectorizer(max_features=VECT_DIM, stop_words='english').fit(corpus)
-
-    return idf_tokenizer
+lim_unigram = 5000
+feature_size = 2 * lim_unigram + 1
+target_size = 4
+hidden_size = 100
+l2_alpha = 0.00001
+learn_rate = 0.01
+clip_ratio = 5
+batch_size_train = 500
+epochs = 90
 
 
 def get_model():
-    input_headline = Input(shape=(VECT_DIM,))
-    input_body = Input(shape=(VECT_DIM,))
+    features = Input(shape=(feature_size,))
+    dense = Dense(hidden_size, activation='relu', kernel_regularizer=keras.regularizers.l2(l2_alpha))(features)
+    dropout = Dropout(0.6)(dense)
+    output = Dense(target_size, activation='softmax', kernel_regularizer=keras.regularizers.l2(l2_alpha))(dropout)
+    model = Model(inputs=[features], outputs=[output])
 
-    input_cosine = Input(shape=(1,))
-
-    input = Concatenate()([input_headline, input_cosine, input_body])
-
-    dense = Dense(100, activation='relu')(input)
-    dropout = Dropout(0.3)(dense)
-    output = Dense(NUM_CLASSES, activation='softmax')(dropout)
-
-    model = Model(inputs=[input_headline, input_cosine, input_body], outputs=[output])
-
+    model.summary()
     return model
 
 
-def get_features(train, c_tokenizer):
-    headline_vectorized = c_tokenizer.transform(train['Headline'])
-    body_vectorized = c_tokenizer.transform(train['articleBody'])
-    return TfidfTransformer(use_idf=False).fit_transform(headline_vectorized).toarray(), TfidfTransformer(
-        use_idf=False).fit_transform(body_vectorized).toarray()
-
-
-def get_cos_sim(train, i_tokenizer):
-    headline_vectorized = i_tokenizer.transform(train['Headline']).toarray()
-    body_vectorized = i_tokenizer.transform(train['articleBody']).toarray()
-    cos = []
-    for i in range(train.shape[0]):
-        cos.append(dot(headline_vectorized[i], body_vectorized[i]) / (
-                norm(headline_vectorized[i]) * norm(body_vectorized[i])))
-    return np.array(cos).reshape((-1, 1))
-
-
 def train():
+    file_train_instances = './data/train/train_stances.csv'
+    file_train_bodies = './data/train/train_bodies.csv'
+
+    file_test_instances = './data/test/test_stances.csv'
+    file_test_bodies = './data/test/test_bodies.csv'
+
+    raw_train = Loader().load_dataset(file_train_instances, file_train_bodies)
+    raw_test = Loader().load_dataset(file_test_instances, file_test_bodies)
+
+    fe = FeatureExtractor(5000)
+
+    train_set, train_stances, valid_set, valid_stances = fe.get_train_fit_vect(raw_train, raw_test)
+    train_set = train_set + valid_set
+    train_stances = train_stances + valid_stances
+    train_set = np.array(train_set)
+    train_stances = np.array(train_stances)
+
+    valid_set = np.array(valid_set)
+    valid_stances = np.array(valid_stances)
+
+    test_set, test_stances = fe.transform(raw_test, labels=True)
+    test_set = np.array(test_set)
+    test_stances = np.array(test_stances)
+
     currentTime = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
     os.mkdir('checkpoints/' + currentTime)
 
     currentCheckointFolder = os.path.join('checkpoints', currentTime)
 
-    data_train = pd.read_csv('data/train/train.csv')
-    c_tokenizer = create_count_tokenizers(data_train)
-
-    with open(os.path.join(currentCheckointFolder, 'c_tokenizer.pkl'), 'wb') as f:
-        pickle.dump(c_tokenizer, f)
-
-    data_test = pd.read_csv('data/test/test.csv')
-    i_tokenizer = create_idf_tokenizers(data_train, data_test)
-
-    with open(os.path.join(currentCheckointFolder, 'i_tokenizer.pkl'), 'wb') as f:
-        pickle.dump(i_tokenizer, f)
-
-    train_split = pd.read_csv('data/train/split/train.csv')
-    y_train = preprocess_labels(train_split, LABELS_DICT)
-
-    vect_headline_train, vect_body_train = get_features(train_split, c_tokenizer)
-    cosine_sim_train = get_cos_sim(train_split, i_tokenizer)
-
-    dev_split = pd.read_csv('data/train/split/dev.csv')
-    y_dev = preprocess_labels(dev_split, LABELS_DICT)
-
-    vect_headline_dev, vect_body_dev = get_features(dev_split, c_tokenizer)
-    cosine_sim_dev = get_cos_sim(dev_split, i_tokenizer)
+    fe.save_vect(currentCheckointFolder)
 
     model = get_model()
 
     model.summary()
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    class_weights = {
-        'unrelated': 1 / 0.73131,
-        'discuss': 1 / 0.17828,
-        'agree': 1 / 0.0736012,
-        'disagree': 1 / 0.0168094
-    }
+    optimizer = Adam(lr=learn_rate, clipvalue=clip_ratio)
+    model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-    class_weights = {LABELS_DICT[label]: val for (label, val) in class_weights.items()}
+    # early_stopping = EarlyStopping(patience=5)
+    model_checkpoint = ModelCheckpoint(os.path.join(currentCheckointFolder, 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'),
+                                       monitor='val_loss',
+                                       save_weights_only=True, save_best_only=True)
 
-    early_stopping = EarlyStopping(patience=5)
-    model_checkpoint = ModelCheckpoint(
-        os.path.join(currentCheckointFolder, 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'), monitor='val_loss')
+    # model.fit(train_set, train_stances,
+    #           batch_size=batch_size_train, epochs=epochs, callbacks=[early_stopping, model_checkpoint])
 
-    model.fit([vect_headline_train, cosine_sim_train, vect_body_train], y_train,
-              validation_data=([vect_headline_dev, cosine_sim_dev, vect_body_dev], y_dev),
-              class_weight=class_weights, batch_size=100, epochs=40, callbacks=[early_stopping, model_checkpoint])
+    model.fit(train_set, train_stances,
+              batch_size=batch_size_train, epochs=epochs)
 
-    def show_eval_metrics(X, y_true, name='dev'):
+    model.save_weights(os.path.join(currentCheckointFolder, 'weights_saved.hdf5'))
+
+    def show_eval_metrics(X, y_true, name='', persist=False):
         preds = model.predict(X)
-        preds_y = np.argmax(preds, axis=1).reshape((-1, 1))
-
-        conf_matrix = confusion_matrix(y_true=y_true, y_pred=preds_y)
+        preds = np.argmax(preds, axis=1)
+        conf_matrix = confusion_matrix(y_true=y_true, y_pred=preds)
         print(conf_matrix)
 
         with open(os.path.join(currentCheckointFolder, 'conf_matrix_{}.txt'.format(name)), 'w') as f:
             f.write(str(conf_matrix))
 
-        report = classification_report(y_true=y_true, y_pred=preds_y)
+        report = classification_report(y_true=y_true, y_pred=preds)
+        print(report)
 
         with open(os.path.join(currentCheckointFolder, 'classification_report_{}.txt'.format(name)), 'w') as f:
             f.write(str(report))
 
-        print(report)
+        if persist:
+            with open(os.path.join(currentCheckointFolder, 'predictions_{}.csv'.format(name)), 'w') as f:
+                f.write('Stance\n')
+                for pred in preds:
+                    f.write(str(ID_TO_LABEL[pred]))
+                    f.write('\n')
 
-    show_eval_metrics([vect_headline_train, cosine_sim_train, vect_body_train],
-                      np.argmax(y_train, axis=1).reshape((-1, 1)), name='train')
+        print("******SCORE VIA SCORER*********")
+        print(f_scorer(y_true=y_true, y_pred=preds))
 
-    show_eval_metrics([vect_headline_dev, cosine_sim_dev, vect_body_dev], np.argmax(y_dev, axis=1).reshape((-1, 1)),
-                      name='dev')
+    show_eval_metrics(train_set, train_stances, name='train')
+
+    show_eval_metrics(valid_set, valid_stances, name='valid')
+
+    show_eval_metrics(test_set, test_stances, name='test', persist=True)
 
 
 if __name__ == '__main__':

@@ -1,36 +1,28 @@
+import os
+import pickle
 from datetime import datetime
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from keras import Input
 from keras import Model
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.layers import Embedding, Bidirectional, LSTM, Concatenate, Dense, Dropout, BatchNormalization, GRU
-from keras.preprocessing.text import Tokenizer
+from keras.layers import Embedding, Bidirectional, Concatenate, Dense, Dropout, BatchNormalization, GRU
 from keras.preprocessing.sequence import pad_sequences
-from sklearn.metrics import confusion_matrix
+from keras.preprocessing.text import Tokenizer
 from sklearn.metrics import classification_report
-import os
-import pickle
+from sklearn.metrics import confusion_matrix
 
 # set based on the dataset expl
 from common.GloveEmbeddings import GloveEmbeddings
 from common.attention import AttentionWithContext
+from stance.utils import LABEL_TO_ID, NUM_CLASSES
 
 NUM_WORDS_HEADLINE = 20000
 MAXLEN_HEADLINE = 32
 
 NUM_WORDS_BODY = 20000
 MAXLEN_BODY = 500
-
-NUM_CLASSES = 4
-
-LABELS_DICT = {
-    'agree': 0,
-    'discuss': 1,
-    'unrelated': 2,
-    'disagree': 3
-}
 
 
 def load_full():
@@ -105,8 +97,7 @@ def preprocess_labels(data, label_to_id):
 
 
 def map_labels_to_id():
-
-    return LABELS_DICT
+    return LABEL_TO_ID
 
 
 def encode_with_bi_lstm(embedding_headline_weights, embedding_body_weights):
