@@ -3,6 +3,8 @@ import pickle
 from csv import DictReader
 
 import numpy as np
+from keras.preprocessing.sequence import pad_sequences
+from keras.preprocessing.text import Tokenizer
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -97,7 +99,6 @@ class FeatureExtractor():
         test_heads_track = {}
         test_bodies = []
         test_bodies_track = {}
-        test_body_ids = []
         head_tfidf_track = {}
         body_tfidf_track = {}
 
@@ -128,7 +129,6 @@ class FeatureExtractor():
             if body_id not in test_bodies_track:
                 test_bodies.append(test.id_to_body[body_id])
                 test_bodies_track[body_id] = 1
-                test_body_ids.append(body_id)
 
         for i, elem in enumerate(heads + body_ids):
             id_ref[elem] = i
@@ -222,9 +222,9 @@ class FeatureExtractor():
         for i, elem in enumerate(heads + body_ids):
             id_ref[elem] = i
 
-        bow = self.bow_vect.fit_transform(heads + bodies)
+        bow = self.bow_vect.transform(heads + bodies)
         tfreq = self.tfreq_vect.transform(bow).toarray()
-        # Process valid set
+
         for instance in X.headlines:
             head = instance['Headline']
             body_id = instance['Body ID']
@@ -245,7 +245,7 @@ class FeatureExtractor():
                 cos_track[(head, body_id)] = tfidf_cos
             else:
                 tfidf_cos = cos_track[(head, body_id)]
-            feat_vec = np.squeeze(np.c_[head_tf, body_tf, tfidf_cos])
+            feat_vec = np.squeeze(np.concatenate([head_tf, body_tf, tfidf_cos], axis=1))
             valid_set.append(feat_vec)
             if labels:
                 valid_stances.append(LABEL_TO_ID[instance['Stance']])
@@ -266,14 +266,106 @@ class FeatureExtractor():
             pickle.dump(self.tfidf_vect, f)
 
     def load_vect(self, bow_vect_path, tfreq_vect_path, tfidf_vect_path):
-        with open(os.path.join(bow_vect_path, 'bow_vect.pkl'), 'wb') as f:
+        with open(os.path.join(bow_vect_path, 'bow_vect.pkl'), 'rb') as f:
             self.bow_vect = pickle.load(f)
 
-        with open(os.path.join(tfreq_vect_path, 'tfreq_vect.pkl'), 'wb') as f:
+        with open(os.path.join(tfreq_vect_path, 'tfreq_vect.pkl'), 'rb') as f:
             self.tfreq_vect = pickle.load(f)
 
-        with open(os.path.join(tfidf_vect_path, 'tfidf_vect.pkl'), 'wb') as f:
-            self.tfidf_vect = pickle.load(tfidf_vect_path)
+        with open(os.path.join(tfidf_vect_path, 'tfidf_vect.pkl'), 'rb') as f:
+            self.tfidf_vect = pickle.load(f)
+
+
+class FeatureExtractor2():
+    def __init__(self, max_words, headline_len, body_len):
+        self.headline_len = headline_len
+        self.body_len = body_len
+        self.max_words = max_words
+        self.tokenizer = None
+
+    def fit(self, train, test):
+        heads = []
+        heads_track = {}
+        bodies = []
+        bodies_track = {}
+
+        for instance in train.headlines:
+            headline = instance['Headline']
+            body_id = instance['Body ID']
+            if headline not in heads_track:
+                heads.append(headline)
+                heads_track[headline] = 1
+            if body_id not in bodies_track:
+                bodies.append(train.id_to_body[body_id])
+                bodies_track[body_id] = 1
+
+        for instance in test.headlines:
+            headline = instance['Headline']
+            body_id = instance['Body ID']
+            if headline not in heads_track:
+                heads.append(headline)
+                heads_track[headline] = 1
+            if body_id not in bodies_track:
+                bodies.append(test.id_to_body[body_id])
+                bodies_track[body_id] = 1
+        tokenizer = Tokenizer(num_words=self.max_words)
+        tokenizer.fit_on_texts(bodies + heads)
+
+        self.tokenizer = tokenizer
+
+        return self
+
+    def transform(self, X, labels=False):
+        heads_track = {}
+        heads = []
+        bodies_track = {}
+        bodies = []
+        body_ids = []
+
+        for instance in X.headlines:
+            headline = instance['Headline']
+            body_id = instance['Body ID']
+            if headline not in heads_track:
+                heads.append(headline)
+                heads_track[headline] = 1
+            if body_id not in bodies_track:
+                bodies.append(X.id_to_body[body_id])
+                bodies_track[body_id] = 1
+                body_ids.append(body_id)
+
+        id_ref = {}
+
+        for i, elem in enumerate(heads + body_ids):
+            id_ref[elem] = i
+
+        seq = self.tokenizer.texts_to_sequences(heads + bodies)
+
+        transformed_headlines = []
+        transformed_bodies = []
+        stances = []
+        for instance in X.headlines:
+            headline = instance['Headline']
+            body_id = instance['Body ID']
+            head_seq = seq[id_ref[headline]]
+            transformed_headlines.append(head_seq)
+            body_seq = seq[id_ref[body_id]]
+            transformed_bodies.append(body_seq)
+            if labels:
+                stances.append(LABEL_TO_ID[instance['Stance']])
+
+        transformed_headlines = pad_sequences(transformed_headlines, maxlen=self.headline_len)
+        transformed_bodies = pad_sequences(transformed_bodies, maxlen=self.body_len)
+        if labels:
+            return transformed_headlines, transformed_bodies, np.array(stances)
+        return transformed_headlines, transformed_bodies
+
+    def save(self, currentCheckpointFolder):
+        with open(os.path.join(currentCheckpointFolder, 'tokenizer.pkl'), 'wb') as f:
+            pickle.dump(self.tokenizer, f)
+
+    def load(self, path):
+        with open(path, 'rb') as f:
+            self.tokenizer = pickle.load(f)
 
 
 def f_scorer(y_true, y_pred, labels=False):

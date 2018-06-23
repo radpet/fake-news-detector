@@ -45,7 +45,7 @@
     }
 
     function receivedText(e) {
-      let lines = e.target.result;
+      var lines = e.target.result;
       var heatmap = JSON.parse(lines);
       console.log(heatmap);
       var $viewer = $('#viewer');

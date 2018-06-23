@@ -1,24 +1,22 @@
 # simple idea with trick based on https://arxiv.org/pdf/1707.03264.pdf
 import os
-import pickle
 from datetime import datetime
 
 import keras
 import numpy as np
 from keras import Input, Model
-from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.layers import Dense, Dropout
 from keras.optimizers import Adam
 from sklearn.metrics import confusion_matrix, classification_report
-from sklearn.utils import compute_class_weight
 
-from stance.utils import Loader, FeatureExtractor, ID_TO_LABEL, f_scorer
+from stance.utils import Loader, FeatureExtractor, ID_TO_LABEL, f_scorer, class_weights
 
-lim_unigram = 5000
-feature_size = 2 * lim_unigram + 1
+vocab_size = 4000
+feature_size = 2 * vocab_size + 1
 target_size = 4
-hidden_size = 100
-l2_alpha = 0.00001
+hidden_size = 50
+l2_alpha = 0.0001
 learn_rate = 0.01
 clip_ratio = 5
 batch_size_train = 500
@@ -28,7 +26,7 @@ epochs = 90
 def get_model():
     features = Input(shape=(feature_size,))
     dense = Dense(hidden_size, activation='relu', kernel_regularizer=keras.regularizers.l2(l2_alpha))(features)
-    dropout = Dropout(0.6)(dense)
+    dropout = Dropout(0.3)(dense)
     output = Dense(target_size, activation='softmax', kernel_regularizer=keras.regularizers.l2(l2_alpha))(dropout)
     model = Model(inputs=[features], outputs=[output])
 
@@ -46,7 +44,7 @@ def train():
     raw_train = Loader().load_dataset(file_train_instances, file_train_bodies)
     raw_test = Loader().load_dataset(file_test_instances, file_test_bodies)
 
-    fe = FeatureExtractor(5000)
+    fe = FeatureExtractor(vocab_size)
 
     train_set, train_stances, valid_set, valid_stances = fe.get_train_fit_vect(raw_train, raw_test)
     train_set = train_set + valid_set
@@ -74,16 +72,13 @@ def train():
     optimizer = Adam(lr=learn_rate, clipvalue=clip_ratio)
     model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-    # early_stopping = EarlyStopping(patience=5)
+    early_stopping = EarlyStopping(patience=3)
     model_checkpoint = ModelCheckpoint(os.path.join(currentCheckointFolder, 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'),
                                        monitor='val_loss',
                                        save_weights_only=True, save_best_only=True)
 
-    # model.fit(train_set, train_stances,
-    #           batch_size=batch_size_train, epochs=epochs, callbacks=[early_stopping, model_checkpoint])
-
-    model.fit(train_set, train_stances,
-              batch_size=batch_size_train, epochs=epochs)
+    model.fit(train_set, train_stances, validation_data=(test_set, test_stances),
+              batch_size=batch_size_train, epochs=epochs, callbacks=[early_stopping, model_checkpoint])
 
     model.save_weights(os.path.join(currentCheckointFolder, 'weights_saved.hdf5'))
 
