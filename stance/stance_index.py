@@ -2,10 +2,10 @@ import os
 
 from stance.stance_predictor import StanceBowPredictor
 
-BOW_VECT_PATH = '../../stance/checkpoints/2018-06-24_00:23:52'
-TF_VECT_PATH = '../../stance/checkpoints/2018-06-24_00:23:52'
-IDF_VECT_PATH = '../../stance/checkpoints/2018-06-24_00:23:52'
-WEIGHTS_PATH = '../../stance/checkpoints/2018-06-24_00:23:52/weights.03-0.48.hdf5'
+BOW_VECT_PATH = '../../stance/checkpoints/2018-06-24_10:38:58'
+TF_VECT_PATH = '../../stance/checkpoints/2018-06-24_10:38:58'
+IDF_VECT_PATH = '../../stance/checkpoints/2018-06-24_10:38:58'
+WEIGHTS_PATH = '../../stance/checkpoints/2018-06-24_10:38:58/weights.03-0.43.hdf5'
 
 
 class StanceIndex():

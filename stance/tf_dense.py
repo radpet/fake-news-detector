@@ -5,7 +5,7 @@ from datetime import datetime
 import keras
 import numpy as np
 from keras import Input, Model
-from keras.callbacks import ModelCheckpoint, EarlyStopping
+from keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
 from keras.layers import Dense, Dropout
 from keras.optimizers import Adam
 from sklearn.metrics import confusion_matrix, classification_report
@@ -77,8 +77,10 @@ def train():
                                        monitor='val_loss',
                                        save_weights_only=True, save_best_only=True)
 
+    logging = TensorBoard(currentCheckointFolder)
+
     model.fit(train_set, train_stances, validation_data=(test_set, test_stances),
-              batch_size=batch_size_train, epochs=epochs, callbacks=[early_stopping, model_checkpoint])
+              batch_size=batch_size_train, epochs=epochs, callbacks=[logging, early_stopping, model_checkpoint])
 
     model.save_weights(os.path.join(currentCheckointFolder, 'weights_saved.hdf5'))
 
