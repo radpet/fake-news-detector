@@ -58,13 +58,16 @@
             'unrelated': $('#unrelated-news')
         };
 
+        var total = 0;
         for (var key in elements) {
             var val = 0;
             if (key in result) {
                 val = result[key].length;
             }
+            total += val;
             elements[key].text(val);
         }
+        $('#total-news').text(total)
 
 
     }
@@ -94,7 +97,7 @@
     }
         
     function renderClickbait(result) {
-        $('#clickbait').text(!!result);
+        $('#clickbait').text(result ? "Clickbait" : "");
     }
 
 }($));

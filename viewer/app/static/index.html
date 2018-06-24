@@ -9,15 +9,34 @@
           integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
 
     <title>Fake news demo</title>
+
+    <style>
+        .red {
+            color: red;
+        }
+
+        .green {
+            color: green;
+        }
+    </style>
 </head>
 <body>
 
 <ul>
-    <li>
+    <li class="green">
         Study finds that babies are most likely to be born at 4am
     </li>
-    <li>
+    <li class="green">
         Trump initiated a trade war with China
+    </li>
+    <li class="green">
+        Microsoft has acquired Github
+    </li>
+    <li class="red">
+        Leanplum bought Microsoft
+    </li>
+    <li>
+        Bill Gates went broke
     </li>
 </ul>
 
@@ -31,23 +50,46 @@
                style="width: 600px; margin: auto;margin-bottom:10px;">
         <button id="check-fact-btn" class="btn btn-primary">Check</button>
     </div>
-    <div>
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Headline category: <span id="fact-category"></span></h5>
-            <h6 class="card-subtitle mb-2 text-muted">Score: <span id="fact-category-score"></span></h6>
-            <h4 class="card-text" id="viewer"></h4>
-          </div>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <ul class="list-group">
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Agree
+                    <span class="badge badge-success badge-pill" id="agree-news">0</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Discuss
+                    <span class="badge badge-primary badge-pill" id="discuss-news">0</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Disagree
+                    <span class="badge badge-danger badge-pill" id="disagree-news">0</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Unrelated
+                  <span class="badge badge-dark badge-pill" id="unrelated-news">0</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Total News
+                    <span class="badge badge-secondary badge-pill" id="total-news">0</span>
+                  </li>
+                </ul>
+            </div>
+
+            <div class="col-10">
+                <div class="card">
+                  <div class="card-body">
+                    <h5 class="card-title">Headline category: <span id="fact-category"></span></h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Score: <span id="fact-category-score"></span></h6>
+                    <h4 class="card-text" id="viewer"></h4>
+                    <span class="badge badge-danger" id="clickbait"></span>
+                  </div>
+                </div>
+            </div>
         </div>
         
-        <p>Headline category: <span id="fact-category"></span></p>
-        <div id="viewer"></div>
-        <p>agree: <span id="agree-news"></span></p>
-        <p>discuss: <span id="discuss-news"></span></p>
-        <p>disagree: <span id="disagree-news"></span></p>
-        <p>unrelated: <span id="unrelated-news"></span></p>
-
-        <p>Clickbait: <span id="clickbait"></span></p>
+        
     </div>
 </div>
 
