@@ -1,5 +1,5 @@
 (function ($) {
-    var BACKEND = 'http://0.0.0.0:8005';
+    var BACKEND = 'http://23.251.143.244:8005';
 
     function bindEvents() {
         var $button = $('#check-fact-btn');
@@ -25,15 +25,28 @@
             dataType: "json"
         });
     }
+    
+    function getClickbait(fact) {
+        return $.ajax({
+            type: 'GET',
+            url: BACKEND + '/clickbait?q=' + fact,
+            dataType: 'json'
+        });
+    }
 
     function checkFact(fact) {
         getCategory(fact).done(function (result) {
-            $('#fact-category').text(result.pred.label + ' &score=' + result.pred.score);
+            $('#fact-category').text(result.pred.label);
+            $('#fact-category-score').text(result.pred.score);
             renderAtt(result);
         });
 
         getStance(fact).done(function (result) {
             renderStance(result);
+        });
+        
+        getClickbait(fact).done(function (result) {
+             renderClickbait(result);   
         });
     }
 
@@ -78,6 +91,10 @@
         $p.html(result_html);
         $p.appendTo($viewer);
 
+    }
+        
+    function renderClickbait(result) {
+        $('#clickbait').text(!!result);
     }
 
 }($));

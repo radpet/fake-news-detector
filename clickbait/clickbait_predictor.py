@@ -4,7 +4,7 @@ import numpy as np
 from common.predictor import Predictor
 
 class ClickbaitPredictor(Predictor):
-    def __init__(self, tokenizer_path, svc_path):
+    def __init__(self, tokenizer_path="model/tokenizer.pkl", svc_path="model/svc.pkl"):
         self.tokenizer = self.deserialize(tokenizer_path)
         self.model = self.deserialize(svc_path)
         pass
